@@ -4,7 +4,7 @@ if (!defined('FREEPBX_IS_AUTH')) { die('No direct script access allowed'); }
 function missedcallnotify_hookGet_config($engine) {
   global $ext;
   global $version;
-  $newsplice=1;
+  $newsplice=0;
   switch($engine) {
   case "asterisk":
     if($newsplice){ # Method fpr splicing using modified splice code yet not implemented in 2.10.0.2
