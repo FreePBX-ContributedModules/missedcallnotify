@@ -1,0 +1,19 @@
+<module>
+	<rawname>missedcallnotify</rawname>
+	<repo>unsupported</repo>
+	<name>Missed Call Notifications</name>
+	<version>0.1</version>
+	<publisher>TSM</publisher>
+	<license>GPLv2+</license>
+	<category>Settings</category>
+	<changelog>
+		*0.1* New
+	</changelog>
+	<description>This will allow notifications to be sent to users if they have missed a call.
+	</description>
+	<depends>
+		<engine>asterisk 1.8</engine>
+	</depends>
+	<location></location>
+	<md5sum></md5sum>
+</module>
