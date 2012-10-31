@@ -5,7 +5,7 @@
 	<version>0.2</version>
 	<publisher>TSM</publisher>
 	<license>GPLv2+</license>
-	<category>Application</category>
+	<category>Applications</category>
 	<changelog>
 		*0.2* Change minimum requirements, update module.xml
 		*0.1* New
