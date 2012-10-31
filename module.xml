@@ -2,11 +2,12 @@
 	<rawname>missedcallnotify</rawname>
 	<type>setup</type>
 	<name>Missed Call Notifications</name>
-	<version>0.2</version>
+	<version>0.3</version>
 	<publisher>TSM</publisher>
 	<license>GPLv2+</license>
 	<category>Applications</category>
 	<changelog>
+		*0.3* Fix error in app category
 		*0.2* Change minimum requirements, update module.xml
 		*0.1* New
 	</changelog>
