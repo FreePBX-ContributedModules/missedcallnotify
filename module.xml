@@ -18,6 +18,6 @@
 		<version>ge2.9</version>
 		<module>core</module>
 	</depends>
-	<location>contributed_modules/release/missedcallnotify-0.2.tgz</location>
-	<md5sum>53c99121fcdb427d1ec5d44e36a797f5</md5sum>
+	<location>contributed_modules/release/missedcallnotify-0.3.tgz</location>
+	<md5sum>d8b6ea101a03d034c3cc27c160d71099</md5sum>
 </module>
