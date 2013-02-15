@@ -2,11 +2,13 @@
 	<rawname>missedcallnotify</rawname>
 	<type>setup</type>
 	<name>Missed Call Notifications</name>
-	<version>0.3</version>
+	<version>0.5</version>
 	<publisher>TSM</publisher>
 	<license>GPLv2+</license>
 	<category>Applications</category>
 	<changelog>
+                *0.5* Fix issue with non space padded extension when altering dialplan directly for fw>=2.10.1.4
+                *0.4* Fix issue when FW was enabled email would end up on ringing exten instead of intended exten
 		*0.3* Fix error in app category
 		*0.2* Change minimum requirements, update module.xml
 		*0.1* New
@@ -15,9 +17,9 @@
 	</description>
 	<depends>
 		<engine>asterisk 1.8</engine>
-		<version>ge2.9</version>
+		<version>ge2.10</version>
 		<module>core</module>
 	</depends>
-	<location>contributed_modules/release/missedcallnotify-0.3.tgz</location>
-	<md5sum>d8b6ea101a03d034c3cc27c160d71099</md5sum>
+	<location>contributed_modules/release/missedcallnotify-0.5.tgz</location>
+	<md5sum>ed8c578b42531311b609f7b1ccceb140</md5sum>
 </module>
