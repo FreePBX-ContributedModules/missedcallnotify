@@ -5,36 +5,57 @@ function missedcallnotify_hookGet_config($engine) {
   global $ext;
   global $version;
   $newsplice=0;
+  error_log('missedcallnotify_hookGet_config - triggered');
   switch($engine) {
   case "asterisk":
     if($newsplice){ # Method fpr splicing using modified splice code yet not implemented in 2.10.0.2
       $ext->splice('macro-hangupcall', 's', 'theend', new ext_gosub(1,'s','sub-missedcallnotify'),'theend',false,true);
     }else{ # Custom method to splice in correct code prior to hangup
+
+      // hook all extens
+      $spliceext=array(
+          'basetag'=>'n',
+          'tag'=>'',
+          'addpri'=>'',
+          'cmd'=>new ext_execif('$["${ORIGEXTTOCALL}"==""]','Set','__ORIGEXTTOCALL=${ARG1}')
+        );
+      array_splice($ext->_exts['macro-exten-vm'][missedcallnotify_padextfix('s')],2,0,array($spliceext));
+
+      // hook on hangup
       $spliceext=array(
           'basetag'=>'n',
           'tag'=>'theend',
           'addpri'=>'',
           'cmd'=>new ext_gosub(1,'s','sub-missedcallnotify')
         );
-      foreach($ext->_exts['macro-hangupcall']['s'] as $_ext_k=>&$_ext_v){
+      foreach($ext->_exts['macro-hangupcall'][missedcallnotify_padextfix('s')] as $_ext_k=>&$_ext_v){
         if($_ext_v['tag']!='theend'){continue;}
         $_ext_v['tag']='';
-        array_splice($ext->_exts['macro-hangupcall']['s'],$_ext_k,0, array($spliceext) );
+        array_splice($ext->_exts['macro-hangupcall'][missedcallnotify_padextfix('s')],$_ext_k,0, array($spliceext) );
         break;
       }
     }
   break;
   }
 }
+
+/* fix to pad exten if framework ver is >=2.10 */
+function missedcallnotify_padextfix($ext){
+  global $version;
+  if(version_compare(get_framework_version(), "2.10.1.4", ">=")){
+      $ext = ' ' . $ext . ' ';
+  }
+  return $ext;
+}
+
 function missedcallnotify_get_config($engine) {
-  $modulename = 'missedcallnotify';
 
   // This generates the dialplan
   global $ext;
   global $amp_conf;
   $mcontext = 'sub-missedcallnotify';
   $exten = 's';
-
+  error_log('missedcallnotify_get_config - triggered');
   $ext->add($mcontext,$exten,'', new ext_noop_trace('UserEmail: ${DB(AMPUSER/${EXTTOCALL}/email)}'));
   $ext->add($mcontext,$exten,'', new ext_noop_trace('GroupEmail: ${DB(AMPGROUP/${NODEST}/email)}'));
   $ext->add($mcontext,$exten,'', new ext_noop_trace('DialStatus: ${DIALSTATUS}'));
@@ -44,8 +65,7 @@ function missedcallnotify_get_config($engine) {
   $ext->add($mcontext,$exten,'', new ext_noop_trace('DialTrunk: ${DIAL_TRUNK}'));
   $ext->add($mcontext,$exten,'', new ext_noop_trace('RingGroupMethod: ${RingGroupMethod}'));
 
-#ext_execif($expr, $app_true, $data_true='', $app_false = '', $data_false = '') {
-  $ext->add($mcontext,$exten,'', new ext_execif('$["${DB(AMPUSER/${EXTTOCALL}/missedcallnotify/status)}"=="enabled" & ["${DIALSTATUS}" == "CANCEL" | "${DIALSTATUS}" == "BUSY" | "${DIALSTATUS}" == "NOANSWER"] & "${OUTBOUND_GROUP}" == "" & "${DIAL_TRUNK}" == "" & "${RingGroupMethod}" == "none"]','System','echo "" | mail -s "MissedCall (${EXTTOCALL}) - ${CALLERID(name)} <${CALLERID(num)}>" ${DB(AMPUSER/${EXTTOCALL}/missedcallnotify/email)}'));
+  $ext->add($mcontext,$exten,'', new ext_execif('$["${DB(AMPUSER/${ORIGEXTTOCALL}/missedcallnotify/status)}"=="enabled" & ["${DIALSTATUS}" == "CANCEL" | "${DIALSTATUS}" == "BUSY" | "${DIALSTATUS}" == "NOANSWER"] & "${OUTBOUND_GROUP}" == "" & "${DIAL_TRUNK}" == "" & "${RingGroupMethod}" == "none"]','System','echo "" | mail -s "MissedCall (${ORIGEXTTOCALL}) - ${CALLERID(name)} <${CALLERID(num)}>" ${DB(AMPUSER/${ORIGEXTTOCALL}/missedcallnotify/email)}'));
   $ext->add($mcontext,$exten,'', new ext_execif('$["${DB_EXISTS(AMPGROUP/${NODEST}/email)}"=="1" & "${DIALSTATUS}" == "CANCEL" & "${OUTBOUND_GROUP}" == "" & "${DIAL_TRUNK}" == "" & "${RingGroupMethod}" != "none"]','System','echo "" | mail -s "MissedCallGroup (${NODEST}) - ${CALLERID(name)} <${CALLERID(num)}>" ${DB(AMPGROUP/${NODEST}/email)}'));
 
 }
@@ -132,15 +152,15 @@ function missedcallnotify_configprocess() {
   }
 }
 
-function missedcallnotify_getall($ext) {
+function missedcallnotify_getall($ext, $base='AMPUSER') {
   global $amp_conf;
   global $astman;
   $mcn=array();
 
   if ($astman) {
-    $missedcallnotify_status = missedcallnotify_get($ext,"status");
+    $missedcallnotify_status = missedcallnotify_get($ext,"status", $base);
     $mcn['missedcallnotify_status'] = $missedcallnotify_status ? $missedcallnotify_status : 'disabled';
-    $missedcallnotify_email = missedcallnotify_get($ext,"email");
+    $missedcallnotify_email = missedcallnotify_get($ext,"email", $base);
     $mcn['missedcallnotify_email'] = $missedcallnotify_email ?  $missedcallnotify_email : '';
   } else {
     fatal("Cannot connect to Asterisk Manager with ".$amp_conf["AMPMGRUSER"]."/".$amp_conf["AMPMGRPASS"]);
@@ -148,7 +168,7 @@ function missedcallnotify_getall($ext) {
   return $mcn;
 }
 
-function missedcallnotify_get($ext, $key, $sub='missedcallnotify', $base='AMPUSER') {
+function missedcallnotify_get($ext, $key, $base='AMPUSER', $sub='missedcallnotify') {
   global $astman;
   global $amp_conf;
 
@@ -161,7 +181,7 @@ function missedcallnotify_get($ext, $key, $sub='missedcallnotify', $base='AMPUSE
 }
 
 
-function missedcallnotify_update($ext, $options, $sub='missedcallnotify', $base='AMPUSER') {
+function missedcallnotify_update($ext, $options, $base='AMPUSER', $sub='missedcallnotify') {
   global $astman;
   global $amp_conf;
 
@@ -175,7 +195,7 @@ function missedcallnotify_update($ext, $options, $sub='missedcallnotify', $base=
   }
 }
 
-function missedcallnotify_del($ext, $sub='missedcallnotify', $base='AMPUSER') {
+function missedcallnotify_del($ext, $base='AMPUSER', $sub='missedcallnotify') {
   global $astman;
   global $amp_conf;
 
